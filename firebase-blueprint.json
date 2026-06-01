@@ -1,0 +1,103 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with setup metadata",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique identifier of the user matching request.auth.uid"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The ISO timestamp when the profile was initialized"
+        }
+      },
+      "required": ["uid", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A single chat bubble in the counseling session",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique, clean message ID"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"],
+          "description": "The sender of the message"
+        },
+        "text": {
+          "type": "string",
+          "description": "Content of the message"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Visual timestamp string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "System timestamp for sorting"
+        }
+      },
+      "required": ["id", "role", "text", "timestamp", "createdAt"]
+    },
+    "JournalEntry": {
+      "title": "JournalEntry",
+      "description": "A comforting diary entry written by a mother and the received comfort letter",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the journal entry"
+        },
+        "date": {
+          "type": "string",
+          "description": "Readable date string"
+        },
+        "title": {
+          "type": "string",
+          "description": "Summary title of the mother's current state"
+        },
+        "content": {
+          "type": "string",
+          "description": "The raw details of the mother's daily pain or notes"
+        },
+        "mood": {
+          "type": "string",
+          "enum": ["exhausted", "anxious", "guilty", "irritated", "sad", "calm"],
+          "description": "The prevailing mood coordinate"
+        },
+        "counselorFeedback": {
+          "type": "string",
+          "description": "The comfort letter response written by the AI coach/son"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "System database timestamp"
+        }
+      },
+      "required": ["id", "date", "title", "content", "mood", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Standard user profile document"
+    },
+    "/users/{userId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Secure subcollection for chat history"
+    },
+    "/users/{userId}/journals/{journalId}": {
+      "schema": "JournalEntry",
+      "description": "Secure subcollection for diaries and comforting letters"
+    }
+  }
+}

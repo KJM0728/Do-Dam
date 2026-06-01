@@ -1,0 +1,6 @@
+{
+  "name": "ADHD 수험생 엄마 상담소",
+  "description": "ADHD 진단받은 수험생 자녀를 키우며 지친 어머니들을 위한 따뜻한 치유와 쉼, 공감의 공간입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

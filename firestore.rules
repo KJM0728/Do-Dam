@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Reusable global helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User Resource Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt']) ||
+        request.resource.data.diff(resource.data).affectedKeys().size() == 0
+      );
+      allow delete: if false;
+
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'createdAt']) &&
+               data.keys().size() == 2 &&
+               data.uid == request.auth.uid &&
+               data.uid is string &&
+               data.createdAt is string;
+      }
+
+      // Chat Messages Subcollection Rules
+      match /messages/{messageId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(messageId) && isValidChatMessage(request.resource.data);
+        allow update, delete: if false;
+
+        function isValidChatMessage(data) {
+          return data.keys().hasAll(['id', 'role', 'text', 'timestamp', 'createdAt']) &&
+                 data.keys().size() == 5 &&
+                 data.id == messageId &&
+                 data.role is string && (data.role == 'user' || data.role == 'model') &&
+                 data.text is string && data.text.size() <= 10000 &&
+                 data.timestamp is string && data.timestamp.size() <= 64 &&
+                 data.createdAt is string;
+        }
+      }
+
+      // Journals / Letters Subcollection Rules
+      match /journals/{journalId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(journalId) && isValidJournalEntry(request.resource.data);
+        allow update: if isOwner(userId) && isValidId(journalId) && isValidJournalEntry(request.resource.data) && (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['counselorFeedback'])
+        );
+        allow delete: if isOwner(userId);
+
+        function isValidJournalEntry(data) {
+          return data.keys().hasAll(['id', 'date', 'title', 'content', 'mood', 'createdAt']) &&
+                 (data.keys().size() == 6 || (data.keys().size() == 7 && data.keys().hasAll(['counselorFeedback']))) &&
+                 data.id == journalId &&
+                 data.date is string && data.date.size() <= 64 &&
+                 data.title is string && data.title.size() <= 200 &&
+                 data.content is string && data.content.size() <= 10000 &&
+                 data.mood is string && (data.mood == 'exhausted' || data.mood == 'anxious' || data.mood == 'guilty' || data.mood == 'irritated' || data.mood == 'sad' || data.mood == 'calm') &&
+                 data.createdAt is string &&
+                 (!data.keys().hasAll(['counselorFeedback']) || data.counselorFeedback is string);
+        }
+      }
+    }
+  }
+}
